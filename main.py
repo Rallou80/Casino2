@@ -722,13 +722,6 @@ async def money(interaction: discord.Interaction):
 
     await salon.send("🎰 Cliquez ci-dessous pour commencer une session client casino :", view=StartView())
     await interaction.response.send_message("✅ Bouton envoyé dans le salon.", ephemeral=True)
-# ==== Gestion des erreurs sur resetroue ====
-@resetroue.error
-async def permission_error(interaction: discord.Interaction, error):
-    if isinstance(error, app_commands.errors.MissingPermissions):
-        await interaction.response.send_message("🚫 Tu n'as pas les permissions administrateur.", ephemeral=True)
-    else:
-        await interaction.response.send_message("❌ Une erreur est survenue.", ephemeral=True)
 
 # ==== Event on_ready ====
 @bot.event
