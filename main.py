@@ -19,6 +19,7 @@ SALON_BOUTON_ID = 1400646732076945539 #id du salon pour le /money (session de ca
 STAFF_ROLE_ID = 1400646907453374615 #id du rôle à ajouter aux tickets
 CATEGORY_ID = 1400647336752971959 # id de la catégorie où sont créer les tickets
 
+ROLE_OR_ID = 1392851286743056485
 ROLE_CASINO_ID = 1400647887360233553 #id du rôle ouverture
 ROLE_PAUSE_ID = 1400647715674656829 #id du rôle pause
 SALON_ROUE_ID = 1400648199517114399 #roue (clients)
@@ -539,53 +540,6 @@ async def on_interaction(interaction: discord.Interaction):
         )
         await interaction.response.defer()
 
-
-# ==== REWARDS ====
-rewards = [
-    ("1000€ de mise", 15),
-    ("250€ Cash", 20),
-    ("500€ de mise", 15),
-    ("500€ de mise", 20),
-    ("Rien", 20),
-    ("*2 sur la prochaine mise", 5),
-    ("10000€ de mise", 3),
-    ("Une photo avec le PDG", 1),
-    ("Une visite du casino", 1),
-]
-
-def tirer_gain():
-    pool = []
-    for reward, chance in rewards:
-        pool.extend([reward] * chance)
-    return random.choice(pool)
-
-class VueRoue(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=None)
-        self.joueurs_deja_passes = set()
-
-    @discord.ui.button(label="🎰Tourner la roue", style=discord.ButtonStyle.green, custom_id="tourner_roue")
-    async def tourner(self, interaction: discord.Interaction, button: discord.ui.Button):
-        user_id = interaction.user.id
-        if user_id in self.joueurs_deja_passes:
-            await interaction.response.send_message("❌ Tu as déjà tourné la roue aujourd’hui !", ephemeral=True)
-            return
-
-        self.joueurs_deja_passes.add(user_id)
-        gain = tirer_gain()
-
-        embed = discord.Embed(title="🎁 Votre gain", color=discord.Color.gold())
-        embed.add_field(name="Gain", value=gain, inline=False)
-        embed.add_field(name="🎉", value="Félicitations ! Venez récupérer votre prix au casino.", inline=False)
-
-        await interaction.response.send_message(embed=embed, ephemeral=True)
-
-        log_channel = bot.get_channel(SALON_LOGS_ID)
-        if log_channel:
-            await log_channel.send(f"🎡 {interaction.user.display_name} a tourné la roue et a gagné : **{gain}**")
-
-
-
 # ==== COMMANDES ====
 
 @bot.tree.command(name="casino", description="Affiche les boutons de gestion du ROYALE Casino", guild=discord.Object(id=GUILD_ID))
@@ -595,18 +549,40 @@ async def casino(interaction: discord.Interaction):
         return
     await interaction.response.send_message("🎰 Contrôle du Casino ROYAL :", view=CasinoControlView())
 
-@bot.tree.command(name="resetroue", description="Remet la roue à zéro", guild=discord.Object(id=GUILD_ID))
-@app_commands.checks.has_permissions(administrator=True)
-async def resetroue(interaction: discord.Interaction):
-    await interaction.response.defer(ephemeral=True)
-    embed = discord.Embed(title="🎡 Roue journalière", description="Clique sur le bouton ci-dessous pour tenter ta chance !", color=discord.Color.blue())
-    embed.set_image(url=GIF_URL)
-    channel = bot.get_channel(SALON_ROUE_ID)
-    if channel:
-        await channel.send(embed=embed, view=VueRoue())
-        await interaction.followup.send("✅ Roue relancée dans 🌡｜tourner-la-roue.", ephemeral=True)
-    else:
-        await interaction.followup.send("❌ Salon introuvable.", ephemeral=True)
+@bot.tree.command(name="roue", description="Tire au sort un membre gagnant parmi les joueurs", guild=discord.Object(id=GUILD_ID))
+async def roue(interaction: discord.Interaction):
+    staff_role = interaction.guild.get_role(STAFF_ROLE_ID)
+    if staff_role not in interaction.user.roles:
+        await interaction.response.send_message("🚫 Tu n'as pas le rôle nécessaire pour utiliser cette commande.", ephemeral=True)
+        return
+
+    role_or = interaction.guild.get_role(ROLE_OR_ID)
+    if not role_or:
+        await interaction.response.send_message("❌ Le rôle de joueurs est introuvable.", ephemeral=True)
+        return
+
+    eligible_members = [member for member in role_or.members if not member.bot]
+
+    if not eligible_members:
+        await interaction.response.send_message("❌ Aucun membre éligible pour le tirage.", ephemeral=True)
+        return
+
+    gagnant = random.choice(eligible_members)
+    gain = random.randint(1000, 10000)
+
+    embed = discord.Embed(
+        title="🎉 Tirage de la Roue ROYAL",
+        description=(
+            f"Le destin a parlé...\n\n"
+            f"🏅 **{gagnant.mention}** remporte **{gain}€** !\n\n"
+            f"Félicitations à notre heureux gagnant ! 🍀"
+        ),
+        color=discord.Color.gold()
+    )
+    embed.set_thumbnail(url=Casino)
+
+    await interaction.response.send_message(embed=embed)
+
 
 
 @bot.tree.command(name="service", description="Envoyer le bouton de prise de service")
