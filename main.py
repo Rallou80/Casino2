@@ -490,7 +490,7 @@ class CasinoView(discord.ui.View):
     async def roulette(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.create_private_game_channel(interaction, "Roulette")
 
-    @discord.ui.button(label="Roue de la fortune", emoji="👨‍💼", style=discord.ButtonStyle.secondary)
+    @discord.ui.button(label="Recrutement", emoji="👨‍💼", style=discord.ButtonStyle.secondary)
     async def roue(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.create_private_game_channel(interaction, "Recrutement")
 
