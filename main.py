@@ -464,7 +464,7 @@ class CasinoView(discord.ui.View):
         }
 
         private_channel = await guild.create_text_channel(
-            name=f"🎰・jeu-{member.display_name}".lower().replace(" ", "-"),
+            name=f"📝・**{game_name}**-{member.display_name}".lower().replace(" ", "-"),
             overwrites=overwrites,
             category=guild.get_channel(CATEGORY_ID)
         )
